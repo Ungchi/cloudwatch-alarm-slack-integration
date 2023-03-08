@@ -40,11 +40,11 @@ def get_slack_message(alarm_type, sns_message, image_url, additional_log=''):
                 'fields': [
                     {
                         "type": "mrkdwn",
-                        "text": f"*타입*\n{namespace}",
+                        "text": f"*Namespace*\n{namespace}",
                     },
                     {
                         "type": "mrkdwn",
-                        "text": f"*발생시점*\n{state_change_time}",
+                        "text": f"*StateChangeTime*\n{state_change_time}",
                     }
                 ],
             },
@@ -71,7 +71,7 @@ def get_slack_message(alarm_type, sns_message, image_url, additional_log=''):
                     "type": "button",
                     "text": {
                         "type": "plain_text",
-                        "text": "알람 설정",
+                        "text": "Settings",
                         "emoji": True
                     },
                     "value": "alarm_setting",
@@ -84,9 +84,9 @@ def get_slack_message(alarm_type, sns_message, image_url, additional_log=''):
 
 
 def get_modal_message(params):
-    alt_text = params['message']['attachments'][0]['blocks'][5]['alt_text']
+    alt_text = params['message']['attachments'][0]['blocks'][3]['alt_text']
     alarm_name, threshold = alt_text.split(';')
-    image_url = params['message']['attachments'][0]['blocks'][5]['image_url']
+    image_url = params['message']['attachments'][0]['blocks'][3]['image_url']
     channel_id = params['channel']['id']
     message_ts = params['container']['message_ts']
     modal_message = {
@@ -113,7 +113,7 @@ def get_modal_message(params):
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": "알람 중지"
+                    "text": "Mute monitor"
                 },
                 "accessory": {
                     "type": "static_select",
@@ -127,56 +127,56 @@ def get_modal_message(params):
                         {
                             "text": {
                                 "type": "plain_text",
-                                "text": "30분"
+                                "text": "10m"
+                            },
+                            "value": "10"
+                        },
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "30m"
                             },
                             "value": "30"
                         },
                         {
                             "text": {
                                 "type": "plain_text",
-                                "text": "1시간"
+                                "text": "1h"
                             },
                             "value": "60"
                         },
                         {
                             "text": {
                                 "type": "plain_text",
-                                "text": "2시간"
+                                "text": "2h"
                             },
                             "value": "120"
                         },
                         {
                             "text": {
                                 "type": "plain_text",
-                                "text": "6시간"
+                                "text": "6h"
                             },
                             "value": "360"
                         },
                         {
                             "text": {
                                 "type": "plain_text",
-                                "text": "12시간"
+                                "text": "12h"
                             },
                             "value": "720"
                         },
                         {
                             "text": {
                                 "type": "plain_text",
-                                "text": "24시간"
+                                "text": "24h"
                             },
                             "value": "1440"
                         },
                         {
                             "text": {
                                 "type": "plain_text",
-                                "text": "48시간"
-                            },
-                            "value": "2880"
-                        },
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "계속"
+                                "text": "Forever"
                             },
                             "value": "-1"
                         },
@@ -196,7 +196,7 @@ def get_modal_message(params):
                 },
                 "label": {
                     "type": "plain_text",
-                    "text": f"임계값(Threshold) 수정[기존: {threshold}]",
+                    "text": f"Change Threshold[Now: {threshold}]",
                 }
             }
         ]

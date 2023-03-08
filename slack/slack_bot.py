@@ -18,9 +18,9 @@ class SlackBot:
         if self.callback_id == 'change_threshold':
             return self.run_change_threshold_callback()
         elif self.callback_id == 'stop_alarm':
-            return self.stop_alarm()
+            return self.mute_alarm()
         elif self.callback_id == 'alarm_setting':
-            return open_modal(self.params)
+            open_modal(self.params)
         return {'statusCode': 200, 'body': 'ok'}
 
     def run_change_threshold_callback(self):
@@ -32,19 +32,19 @@ class SlackBot:
         message_info = self.params['view']['blocks'][1]['alt_text'].split(';')
         channel = message_info[0]
         thread_ts = message_info[1]
-        previous_value = self.params['view']['blocks'][5]['element']['placeholder']['text']
-        value = self.action['value']
+        previous_value = self.params['view']['blocks'][3]['element']['placeholder']['text']
+        value = float(self.action['value'])
         alarm_name = self.params['view']['blocks'][0]['text']['text']
         change_alarm_threshold(alarm_name, value)
         message = {
             'channel': channel,
             'thread_ts': thread_ts,
-            'text': f'<@{self.username}>\n{alarm_name} 임계값(Threshold)을 {previous_value} -> {float(value)}으로 수정합니다.'
+            'text': f'<@{self.username}> Change {alarm_name} threshold {previous_value} to {value}'
         }
         post_message(message)
         return {'statusCode': 200, 'body': 'ok'}
 
-    def stop_alarm(self):
+    def mute_alarm(self):
         """
         slack modal 창에서 알람 중지 선택 시 실행되는 콜백 함수
         image alt_text 영역에 channel 과 메세지 thread_ts 값이 설정되어 있어 이를 확인해 thread message 를 남긴다.
@@ -61,7 +61,7 @@ class SlackBot:
         message = {
             'channel': channel,
             'thread_ts': thread_ts,
-            'text': f'<@{self.username}>\n{alarm_name} 알람을 {selected_text} 중지합니다.'
+            'text': f'<@{self.username}> Mute alarm *{alarm_name}* for {selected_text}'
         }
         post_message(message)
         return {'statusCode': 200, 'body': 'ok'}
