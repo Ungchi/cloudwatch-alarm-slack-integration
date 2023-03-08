@@ -2,12 +2,20 @@ import json
 import boto3
 
 from enums.comparison_operator import ComparisonOperator
+from logger import log
 from slack import upload_file, get_file_public_url
 
 cloudwatch = boto3.client('cloudwatch', region_name='ap-northeast-2')
 
+ALLOW_METRIC_KEYS = [
+    'AlarmName', 'AlarmDescription', 'ActionsEnabled', 'OKActions', 'AlarmActions', 'InsufficientDataActions',
+    'MetricName', 'Namespace', 'Statistic', 'ExtendedStatistic', 'Dimensions', 'Period', 'Unit', 'EvaluationPeriods',
+    'DatapointsToAlarm', 'Threshold', 'ComparisonOperator', 'TreatMissingData', 'EvaluateLowSampleCountPercentile',
+    'Metrics', 'Tags', 'ThresholdMetricId'
+]
 
-def get_cloudwatch_alarm_info(alarm_name):
+
+def get_cloudwatch_alarm_info(alarm_name: str) -> dict:
     """
     CloudWatch 실시간 데이터를 확인하여 반환한다.
     :param alarm_name: CloudWatch Alarm Name
@@ -79,12 +87,10 @@ def change_alarm_threshold(alarm_name, threshold):
     :param threshold: CloudWatch Alarm Threshold Value
     """
     alarm_info = get_cloudwatch_alarm_info(alarm_name)
-    alarm_info.pop('AlarmArn', None)
-    alarm_info.pop('AlarmConfigurationUpdatedTimestamp', None)
-    alarm_info.pop('StateValue', None)
-    alarm_info.pop('StateReason', None)
-    alarm_info.pop('StateReasonData', None)
-    alarm_info.pop('StateUpdatedTimestamp', None)
-    alarm_info['Threshold'] = float(threshold)
+    keys = list(alarm_info.keys())
+    for key in keys:
+        if key not in ALLOW_METRIC_KEYS:
+            alarm_info.pop(key)
+    alarm_info['Threshold'] = threshold
     resp = cloudwatch.put_metric_alarm(**alarm_info)
-    print(resp)
+    log.info(f'cloudwatch put_metric_alarm result: {resp}')
