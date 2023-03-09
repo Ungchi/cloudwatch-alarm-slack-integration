@@ -10,6 +10,10 @@ AWS Cloudwatch Alarm - Slack 연동
 - 임계값 수정
 - 알림 일시 정지 기능
 
+![Slack Message](/docs/slack_message.png?raw=true "Slack Message")
+
+![Slack Modal](/docs/slack_modal.png?raw=true "Slack Modal")
+
 ![System Architecture](/docs/architecture.png?raw=true "System Architecture")
 
 ## Setting Slack App
