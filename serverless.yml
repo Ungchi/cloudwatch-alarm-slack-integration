@@ -1,0 +1,120 @@
+frameworkVersion: '3'
+variablesResolutionMode: 20210326
+service: cloudwatch-alarm-slack-integration
+
+plugins:
+  - serverless-python-requirements
+
+custom:
+  # set variables
+  vars:
+    vpc:
+      securityGroupIds:
+        - sg-
+      subnetIds:
+        - subnet-
+        - subnet-
+    deploymentBucketName:
+    awsRegion:
+    awsAccountId:
+    alertSqsName:
+    repeatSnsName:
+    singleSnsName:
+
+    slackChannel:
+    slackUserToken: xoxp-
+    slackBotToken: xoxb-
+
+    redisUrl:
+    redisPort:
+
+    alertSqsUrl: https://sqs.${self:custom.vars.awsRegion}.amazonaws.com/${self:custom.vars.awsAccountId}/${self:custom.vars.alertSqsName}
+    alertSqsArn: arn:aws:sqs:${self:custom.vars.awsRegion}:${self:custom.vars.awsAccountId}:${self:custom.vars.alertSqsName}
+    repeatSnsArn: arn:aws:sns:${self:custom.vars.awsRegion}:${self:custom.vars.awsAccountId}:${self:custom.vars.repeatSnsName}
+    singleSnsArn: arn:aws:sns:${self:custom.vars.awsRegion}:${self:custom.vars.awsAccountId}:${self:custom.vars.singleSnsName}
+
+    logLevel: DEBUG
+
+  # create requirements layer
+  pythonRequirements:
+    dockerizePip: non-linux
+    layer:
+      name: ${self:service}-${sls:stage}-layer
+      description: Python requirements ${self:service}-${sls:stage} layer
+      compatibleRuntimes:
+        - python3.8
+
+provider:
+  name: aws
+  stage: stg
+  runtime: python3.8
+  region: ${self:custom.vars.awsRegion}
+  lambdaHashingVersion: 20201221
+  logRetentionInDays: 14
+  deploymentBucket:
+    name: ${self:custom.vars.deploymentBucketName}
+    serverSideEncryption: AES256
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - sqs:DeleteMessage
+            - sqs:ReceiveMessage
+            - sqs:GetQueueAttributes
+            - sqs:SendMessage
+          Resource:
+            - ${self:custom.vars.alertSqsArn}
+        - Effect: Allow
+          Action:
+            - sns:Publish
+          Resource:
+            - ${self:custom.vars.repeatSnsArn}
+            - ${self:custom.vars.singleSnsArn}
+        - Effect: Allow
+          Action:
+            - cloudwatch:GetMetricWidgetImage
+            - cloudwatch:DescribeAlarms
+            - cloudwatch:PutMetricAlarm
+          Resource: '*'
+  environment:
+    TZ: Asia/Seoul
+    SLACK_CHANNEL: ${self:custom.vars.slackChannel}
+    SLACK_USER_TOKEN: ${self:custom.vars.slackUserToken}
+    SLACK_BOT_TOKEN: ${self:custom.vars.slackBotToken}
+    REDIS_URL: ${self:custom.vars.redisUrl}
+    REDIS_PORT: ${self:custom.vars.redisPort}
+    ALERT_SQS_URL: ${self:custom.vars.alertSqsUrl}
+    REPEAT_SNS_ARN: ${self:custom.vars.repeatSnsArn}
+    SINGLE_SNS_ARN: ${self:custom.vars.singleSnsArn}
+    LOG_LEVEL: ${self:custom.vars.logLevel}
+
+# exclude useless files
+package:
+  patterns:
+    - '!.venv/**'
+    - '!venv/**'
+    - '!node_modules/**'
+    - '!package.json'
+    - '!package-lock.json'
+    - '!requirements.txt'
+    - '!.gitignore'
+
+functions:
+  slack-lambda:
+    handler: handler.lambda_handler
+    url: true
+    name: cloudwatch-alarm-slack-integration-lambda-${sls:stage}
+    description: cloudwatch alarm slack integration lambda ${sls:stage}
+    memorySize: 128
+    timeout: 10
+    layers:
+      - Ref: PythonRequirementsLambdaLayer
+    vpc: ${self:custom.vars.vpc}
+    events:
+      - sqs:
+          arn: ${self:custom.vars.alertSqsArn}
+          batchSize: 1
+          maximumBatchingWindow: 2
+      - sns: ${self:custom.vars.repeatSnsArn}
+      - sns: ${self:custom.vars.singleSnsArn}
